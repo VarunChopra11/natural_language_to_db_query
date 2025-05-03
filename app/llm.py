@@ -57,27 +57,61 @@ Important Indexes for Query Optimization:
  Storage Access Patterns → Use access_list.address index
 """
 
-PROMPT_TEMPLATE = f"""
+PROMPT_TEMPLATE = """
 Convert this natural language query into a PostgreSQL query using the following schema.
-Use proper indexes and optimize for performance. 
-Return ONLY the SQL query in this format: {{"query": "SQL_QUERY", "explanation": "brief explanation"}}
+Use proper indexes and optimize for performance.
 
-Schema Context: {SCHEMA_CONTEXT}
+For ALL queries, enforce proper pagination and limit the results to prevent application crashes.
+
+Schema Context: {schema_context}
+
+IMPORTANT PAGINATION RULES:
+1. ALWAYS include LIMIT and OFFSET for queries that return multiple rows 
+2. Use page_index={page_index} and rows_per_page={rows_per_page} for pagination
+3. Return both a main query and a count query for total rows
+4. Sort by recent data first when appropriate (latest blocks/transactions)
+5. For time-based queries, leverage block.timestamp index
+6. For specific count queries (like "show me 5 transactions"), respect the user's request
+
+Your response MUST be valid JSON with this format:
+{{
+  "query": "SQL query with LIMIT/OFFSET for pagination",
+  "count_query": "Query to count total results for pagination",
+  "explanation": "Brief explanation of the query and optimization"
+}}
+
+For queries requesting a specific number of results (e.g., "show last 5 transactions"), 
+return only the main query without count_query since pagination is not needed.
 
 Examples:
+
 1. Input: "Show transactions from 0xabc to 0xdef in the last week"
    Output: {{
-     "query": "SELECT * FROM transactions WHERE from_address = '0xabc' AND to_address = '0xdef' AND block_number IN (SELECT number FROM blocks WHERE timestamp >= NOW() - INTERVAL '7 DAYS')",
-     "explanation": "Uses address indexes and timestamp index"
+     "query": "SELECT * FROM transactions WHERE from_address = '0xabc' AND to_address = '0xdef' AND block_number IN (SELECT number FROM blocks WHERE timestamp >= NOW() - INTERVAL '7 DAYS') ORDER BY block_number DESC LIMIT {rows_per_page} OFFSET ({page_index} - 1) * {rows_per_page}",
+     "count_query": "SELECT COUNT(*) FROM transactions WHERE from_address = '0xabc' AND to_address = '0xdef' AND block_number IN (SELECT number FROM blocks WHERE timestamp >= NOW() - INTERVAL '7 DAYS')",
+     "explanation": "Uses address indexes and timestamp index, with pagination"
    }}
 
-2. Input: "What's the total ETH transferred by miner 0xminer in March 2024?"
+2. Input: "Show me the last 5 transactions"
    Output: {{
-     "query": "SELECT SUM(value) FROM transactions WHERE from_address = '0xminer' AND block_number IN (SELECT number FROM blocks WHERE miner = '0xminer' AND timestamp BETWEEN '2024-03-01' AND '2024-04-01')",
-     "explanation": "Uses miner index and address index"
+     "query": "SELECT * FROM transactions ORDER BY block_number DESC LIMIT 5",
+     "explanation": "Limited to exactly 5 transactions as requested, no pagination needed"
    }}
 
-Now convert this: 
+3. Input: "Show all transactions"
+   Output: {{
+     "query": "SELECT * FROM transactions ORDER BY block_number DESC LIMIT {rows_per_page} OFFSET ({page_index} - 1) * {rows_per_page}",
+     "count_query": "SELECT COUNT(*) FROM transactions",
+     "explanation": "Returns all transactions with pagination to avoid performance issues"
+   }}
+
+4. Input: "What's the total ETH transferred by miner 0xminer in March 2024?"
+   Output: {{
+     "query": "SELECT SUM(value) as total_eth FROM transactions WHERE from_address = '0xminer' AND block_number IN (SELECT number FROM blocks WHERE miner = '0xminer' AND timestamp BETWEEN '2024-03-01' AND '2024-04-01')",
+     "explanation": "Uses miner index and address index for an aggregation query"
+   }}
+
+Now convert this natural language query: {query}
 """
 
 
@@ -87,12 +121,10 @@ class GenerateQuery:
         """
         Extract and parse JSON from an LLM response that might be wrapped in markdown code fences.
         """
-        # Pattern to match code blocks with or without language specifier
         code_block_pattern = r"```(?:json)?\s*([\s\S]*?)\s*```"
         code_blocks = re.findall(code_block_pattern, response)
         
         if code_blocks:
-            # Try each code block until we find valid JSON
             for block in code_blocks:
                 try:
                     return json.loads(block)
@@ -113,11 +145,17 @@ class GenerateQuery:
         return None
 
     @staticmethod
-    def generate_query(natural_language: str) -> Dict[str, Any]:
+    def generate_query(natural_language: str, page_index: int = 1, rows_per_page: int = 100) -> Dict[str, Any]:
         """
         Generate SQL query from natural language using Gemini model.
         """
-        prompt = PROMPT_TEMPLATE + natural_language
+        prompt = PROMPT_TEMPLATE.format(
+            schema_context=SCHEMA_CONTEXT,
+            query=natural_language,
+            page_index=page_index,
+            rows_per_page=rows_per_page
+        )
+        
         response = model.generate_content(prompt)
         
         print("Response:", response.text)
@@ -132,5 +170,16 @@ class GenerateQuery:
         
         if "query" not in parsed_json:
             raise ValueError(f"Response missing required 'query' field: {parsed_json}")
+        
+        parsed_json['query'] = parsed_json['query'].format(
+            page_index=page_index,
+            rows_per_page=rows_per_page
+        )
+        
+        if "count_query" in parsed_json:
+            parsed_json['count_query'] = parsed_json['count_query'].format(
+                page_index=page_index,
+                rows_per_page=rows_per_page
+            )
         
         return parsed_json
