@@ -25,4 +25,4 @@ app.include_router(query_routers.router, prefix="/query", tags=["query"])
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8000, log_level="info", reload=True)
+    uvicorn.run(app, host="localhost", port=8000)
