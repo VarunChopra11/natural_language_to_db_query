@@ -77,7 +77,7 @@ Your response MUST be valid JSON with this format:
 {{
   "query": "SQL query with LIMIT/OFFSET for pagination",
   "count_query": "Query to count total results for pagination",
-  "explanation": "Brief explanation of the query and optimization"
+  "explanation": "Brief explanation of the query"
 }}
 
 For queries requesting a specific number of results (e.g., "show last 5 transactions"), 
@@ -89,20 +89,20 @@ Examples:
    Output: {{
      "query": "SELECT * FROM transactions WHERE from_address = '0xabc' AND to_address = '0xdef' AND block_number IN (SELECT number FROM blocks WHERE timestamp >= NOW() - INTERVAL '7 DAYS') ORDER BY block_number DESC LIMIT {rows_per_page} OFFSET ({page_index} - 1) * {rows_per_page}",
      "count_query": "SELECT COUNT(*) FROM transactions WHERE from_address = '0xabc' AND to_address = '0xdef' AND block_number IN (SELECT number FROM blocks WHERE timestamp >= NOW() - INTERVAL '7 DAYS')",
-     "explanation": "Uses address indexes and timestamp index, with pagination"
+     "explanation": "Uses address indexes and timestamp index, to filter transactions from the last week."
    }}
 
 2. Input: "Show me the last 5 transactions"
    Output: {{
      "query": "SELECT * FROM transactions ORDER BY block_number DESC LIMIT 5",
-     "explanation": "Limited to exactly 5 transactions as requested, no pagination needed"
+     "explanation": "Shows the last 5 transactions."
    }}
 
 3. Input: "Show all transactions"
    Output: {{
      "query": "SELECT * FROM transactions ORDER BY block_number DESC LIMIT {rows_per_page} OFFSET ({page_index} - 1) * {rows_per_page}",
      "count_query": "SELECT COUNT(*) FROM transactions",
-     "explanation": "Returns all transactions with pagination to avoid performance issues"
+     "explanation": "Returns all transactions ordered by block_number."
    }}
 
 4. Input: "What's the total ETH transferred by miner 0xminer in March 2024?"
@@ -181,5 +181,7 @@ class GenerateQuery:
                 page_index=page_index,
                 rows_per_page=rows_per_page
             )
+
+        print("Final parsed JSON:", parsed_json)
         
         return parsed_json
