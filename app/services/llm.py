@@ -131,7 +131,6 @@ class GenerateQuery:
                 except json.JSONDecodeError:
                     continue
         
-        # If no code blocks or none contained valid JSON, try the entire response
         try:
             return json.loads(response)
         except json.JSONDecodeError:
@@ -145,7 +144,7 @@ class GenerateQuery:
         return None
 
     @staticmethod
-    def generate_query(natural_language: str, page_index: int = 1, rows_per_page: int = 100) -> Dict[str, Any]:
+    async def generate_query(natural_language: str, page_index: int = 1, rows_per_page: int = 10) -> Dict[str, Any]:
         """
         Generate SQL query from natural language using Gemini model.
         """
@@ -156,7 +155,7 @@ class GenerateQuery:
             rows_per_page=rows_per_page
         )
         
-        response = model.generate_content(prompt)
+        response = await model.generate_content_async(prompt)
         
         print("Response:", response.text)
         print("----------------------------------------")

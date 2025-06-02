@@ -3,10 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import query_routers
 from dotenv import load_dotenv
 import os
+from contextlib import asynccontextmanager
+from app.db.db import init_db_pool, close_db_pool
 
 load_dotenv()
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db_pool()
+    yield
+    await close_db_pool()
+
+app = FastAPI(lifespan=lifespan)
 
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 origins = [

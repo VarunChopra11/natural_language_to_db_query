@@ -5,7 +5,7 @@ from app.services.query import ExecuteQuery
 router = APIRouter()
 
 @router.get("/create_query")
-async def create_query(natural_language: str, page_index: int = 1, rows_per_page: int = 100):
+async def create_query(natural_language: str, page_index: int = 1, rows_per_page: int = 10):
     """
     Create a SQL query from natural language using the Gemini model.
     
@@ -18,14 +18,14 @@ async def create_query(natural_language: str, page_index: int = 1, rows_per_page
         dict: A dictionary containing the generated SQL query and other related information.
     """
     try:
-        sql_query = GenerateQuery.generate_query(natural_language, page_index, rows_per_page)
+        sql_query = await GenerateQuery.generate_query(natural_language, page_index, rows_per_page)
         if "query" not in sql_query:
             raise ValueError(f"Failed to parse Gemini response. Received: {sql_query}")
         
         if "count_query" in sql_query:
-            total_rows = ExecuteQuery.count_rows(sql_query["count_query"])
+            total_rows = await ExecuteQuery.count_rows(sql_query["count_query"])
         
-        columns, data = ExecuteQuery.execute_query(sql_query["query"])
+        columns, data = await ExecuteQuery.execute_query(sql_query["query"])
 
         sql_query["columns"] = columns
         sql_query["data"] = data
@@ -34,5 +34,3 @@ async def create_query(natural_language: str, page_index: int = 1, rows_per_page
     except Exception as e:
         return {"error": str(e)}
     return sql_query
-    
-
