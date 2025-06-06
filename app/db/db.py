@@ -6,6 +6,7 @@ _db_pool = None
 async def init_db_pool():
     global _db_pool
     if _db_pool is None:
+        print("Initializing database connection pool...")
         _db_pool = await asyncpg.create_pool(
             dsn=DATABASE_URL,
             min_size=1,
@@ -13,7 +14,8 @@ async def init_db_pool():
             timeout=60,
             max_inactive_connection_lifetime=300,
         )
-    return _db_pool 
+        await create_tables()
+    return _db_pool
 
 async def create_tables():
     async with _db_pool.acquire() as conn:
@@ -29,6 +31,7 @@ async def create_tables():
                     updated_at TIMESTAMP
                 )
             """)
+            print(" 'client_users' table checked/created.")
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS end_users (
                     id SERIAL PRIMARY KEY,
@@ -38,6 +41,7 @@ async def create_tables():
                     created_at TIMESTAMP NOT NULL DEFAULT NOW()
                 )
             """)
+            print(" 'end_users' table checked/created.")
 
 async def get_connection():
     global _db_pool

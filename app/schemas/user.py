@@ -5,6 +5,9 @@ class ClientUserCreate(BaseModel):
     company_name: str
     email: EmailStr
 
+class ClientUserLogin(BaseModel):
+    email: EmailStr
+
 class ClientUserResponse(BaseModel):
     id: int
     company_name: str
