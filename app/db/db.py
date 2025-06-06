@@ -14,7 +14,34 @@ async def init_db_pool():
             timeout=60,
             max_inactive_connection_lifetime=300,
         )
-    return _db_pool 
+        await create_tables()
+    return _db_pool
+
+async def create_tables():
+    async with _db_pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS client_users (
+                    id SERIAL PRIMARY KEY,
+                    company_name VARCHAR(100) NOT NULL UNIQUE,
+                    email VARCHAR(100) NOT NULL UNIQUE,
+                    api_key VARCHAR(100) UNIQUE,
+                    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMP
+                )
+            """)
+            print(" 'client_users' table checked/created.")
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS end_users (
+                    id SERIAL PRIMARY KEY,
+                    client_id INTEGER NOT NULL REFERENCES client_users(id),
+                    wallet_address VARCHAR(100) NOT NULL UNIQUE,
+                    email VARCHAR(100),
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+                )
+            """)
+            print(" 'end_users' table checked/created.")
 
 async def get_connection():
     global _db_pool
