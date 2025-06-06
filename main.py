@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import query_routers
+from app.routers import auth_routers
 from dotenv import load_dotenv
 import os
 from contextlib import asynccontextmanager
@@ -31,6 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(query_routers.router, prefix="/query", tags=["query"])
+app.include_router(auth_routers.router, prefix="/auth", tags=["Authentication"])
 
 if __name__ == "__main__":
     import uvicorn

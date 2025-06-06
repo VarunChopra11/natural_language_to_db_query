@@ -6,3 +6,8 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'your_gemini_api_key')
 
 DATABASE_URL = os.getenv("GCP_DATABASE_URL", "postgresql+asyncpg://user:password@localhost/dbname")
+
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+
+GMAIL_ADDRESS = os.getenv("GMAIL_ADDRESS")
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
