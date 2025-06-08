@@ -5,3 +5,5 @@ ijson
 fastapi
 uvicorn
 asyncpg
+python-jose
+pydantic[email]

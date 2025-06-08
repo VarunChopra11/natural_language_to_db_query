@@ -13,6 +13,7 @@ from app.services.auth_services import (
     SECRET_KEY,
     ALGORITHM,
     ACCESS_TOKEN_EXPIRE_MINUTES,
+    get_current_client
 )
 from app.db.db import get_connection
 from app.schemas.user import ClientUserCreate, ClientUserLogin, ClientUserResponse
@@ -85,15 +86,12 @@ async def verify_email(token: str, pool=Depends(get_connection)):
 
     async with pool.acquire() as conn:
         async with conn.transaction():
-            result = await conn.execute(
+            await conn.execute(
                 """UPDATE client_users 
                    SET is_verified = TRUE 
                    WHERE email = $1 AND is_verified = FALSE""",
                 email
             )
-
-            if result == "UPDATE 0":
-                raise HTTPException(status_code=400, detail="Already verified or user not found")
 
             access_token = create_access_token(
                 {"sub": email},

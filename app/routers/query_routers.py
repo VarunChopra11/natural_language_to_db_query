@@ -1,11 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from app.services.llm import GenerateQuery
 from app.services.query import ExecuteQuery
+from app.services.auth_services import get_current_client
 
 router = APIRouter()
 
 @router.get("/create_query")
-async def create_query(natural_language: str, page_index: int = 1, rows_per_page: int = 10):
+async def create_query(natural_language: str, page_index: int = 1, rows_per_page: int = 10, user=Depends(get_current_client)):
     """
     Create a SQL query from natural language using the Gemini model.
     
@@ -18,6 +19,9 @@ async def create_query(natural_language: str, page_index: int = 1, rows_per_page
         dict: A dictionary containing the generated SQL query and other related information.
     """
     try:
+        if not user:
+            raise ValueError("User is not authenticated or verified.")
+        
         sql_query = await GenerateQuery.generate_query(natural_language, page_index, rows_per_page)
         if "query" not in sql_query:
             raise ValueError(f"Failed to parse Gemini response. Received: {sql_query}")

@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from datetime import datetime, timedelta, timezone
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import APIKeyHeader
 from app.config import SECRET_KEY, GMAIL_ADDRESS, GMAIL_APP_PASSWORD
 from app.db.db import get_connection
 from jose import JWTError, jwt
@@ -12,11 +12,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+api_key_scheme = APIKeyHeader(name="Authorization")
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-VERIFICATION_TOKEN_EXPIRE_MINUTES = 1440
+VERIFICATION_TOKEN_EXPIRE_MINUTES = 1
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -31,7 +31,7 @@ def create_verification_token(email: str):
     )
 
 async def get_current_client(
-    token: str = Depends(oauth2_scheme),
+    token: str = Depends(api_key_scheme),
     conn: asyncpg.Connection = Depends(get_connection)
 ):
     credentials_exception = HTTPException(

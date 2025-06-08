@@ -22,8 +22,8 @@ class ExecuteQuery:
                     
                     execution_time = time.time() - start_time
                     print(f"Query executed in {execution_time:.2f} seconds")
-                    print(f"Columns: {columns}")
-                    print(f"Results count: {len(dict_results)}")
+                    # print(f"Columns: {columns}")
+                    # print(f"Results count: {len(dict_results)}")
                     
                     return columns, dict_results
                     
@@ -49,7 +49,7 @@ class ExecuteQuery:
                     
                     execution_time = time.time() - start_time
                     print(f"Count query executed in {execution_time:.2f} seconds")
-                    print(f"Total rows: {total_rows}")
+                    # print(f"Total rows: {total_rows}")
                     
                     return total_rows
                     
