@@ -107,7 +107,7 @@ async def verify_email(token: str, pool=Depends(get_connection)):
                 max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
                 secure=True,
                 samesite="none",
-                domain="natural-language-to-db-query.onrender.com"
+                domain="query-nl.vercel.app"
             )
             return response
         
