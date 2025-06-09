@@ -20,7 +20,7 @@ app = FastAPI(lifespan=lifespan)
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 origins = [
     "https://query-nl.vercel.app",
-    "https://query-nl.vercel.app/",
+    "http://localhost:8080",
 ]
 
 app.add_middleware(
