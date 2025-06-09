@@ -1,6 +1,5 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from datetime import datetime, timedelta, timezone
-from fastapi.security import APIKeyHeader
 from app.config import SECRET_KEY, GMAIL_ADDRESS, GMAIL_APP_PASSWORD
 from app.db.db import get_connection
 from jose import JWTError, jwt
@@ -12,7 +11,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 
-api_key_scheme = APIKeyHeader(name="Authorization")
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -30,8 +28,17 @@ def create_verification_token(email: str):
         timedelta(minutes=VERIFICATION_TOKEN_EXPIRE_MINUTES)
     )
 
+async def get_token_from_cookie(request: Request) -> str:
+    token = request.cookies.get("token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication token",
+        )
+    return token
+
 async def get_current_client(
-    token: str = Depends(api_key_scheme),
+    request: Request,
     conn: asyncpg.Connection = Depends(get_connection)
 ):
     credentials_exception = HTTPException(
@@ -40,6 +47,7 @@ async def get_current_client(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        token = await get_token_from_cookie(request)
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:

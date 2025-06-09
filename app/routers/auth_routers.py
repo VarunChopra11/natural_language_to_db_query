@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.responses import RedirectResponse
 from jose import jwt, JWTError
@@ -102,13 +102,19 @@ async def verify_email(token: str, pool=Depends(get_connection)):
             response = RedirectResponse(url=frontend_url)
             response.set_cookie(
                 key="token",
-                value=f"Bearer {access_token}",
+                value=access_token,
                 httponly=True,
                 max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
                 secure=True,
                 samesite="Lax"
             )
             return response
+        
+@router.get("/get-current-client")
+async def get_current_client_endpoint(user: dict = Depends(get_current_client)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user
 
 @router.post("/logout")
 async def logout():
