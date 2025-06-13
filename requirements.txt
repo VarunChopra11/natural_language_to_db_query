@@ -7,3 +7,4 @@ uvicorn
 asyncpg
 python-jose
 pydantic[email]
+SQLAlchemy
