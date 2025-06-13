@@ -25,13 +25,41 @@ async def create_tables():
                     id SERIAL PRIMARY KEY,
                     company_name VARCHAR(100) NOT NULL UNIQUE,
                     email VARCHAR(100) NOT NULL UNIQUE,
-                    api_key VARCHAR(100) UNIQUE,
                     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
                     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                     updated_at TIMESTAMP
                 )
             """)
             print(" 'client_users' table checked/created.")
+            
+            # Create api_keys table
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS api_keys (
+                    id SERIAL PRIMARY KEY,
+                    api_key_id VARCHAR(100) NOT NULL UNIQUE,
+                    client_id INTEGER NOT NULL REFERENCES client_users(id) ON DELETE CASCADE,
+                    api_key_hash VARCHAR(100) NOT NULL UNIQUE,
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMP,
+                    last_used_at TIMESTAMP
+                )
+            """)
+            print(" 'api_keys' table checked/created.")
+            
+            # Create indexes for api_keys table for better performance
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_api_keys_client_id ON api_keys(client_id);
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(api_key_hash);
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys(is_active);
+            """)
+            print(" API keys indexes checked/created.")
+            
+            # Create end_users table
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS end_users (
                     id SERIAL PRIMARY KEY,
