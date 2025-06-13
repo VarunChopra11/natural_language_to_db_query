@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import query_routers
 from app.routers import auth_routers
 from app.routers import apikey_routers
+from app.routers import enduser_routers
 from dotenv import load_dotenv
 import os
 from contextlib import asynccontextmanager
@@ -35,6 +36,7 @@ app.add_middleware(
 app.include_router(query_routers.router, prefix="/query", tags=["query"])
 app.include_router(auth_routers.router, prefix="/auth", tags=["Authentication"])
 app.include_router(apikey_routers.router, prefix="/apikey", tags=["API Keys"])
+app.include_router(enduser_routers.router, prefix="/enduser", tags=["End Users"])
 
 if __name__ == "__main__":
     import uvicorn

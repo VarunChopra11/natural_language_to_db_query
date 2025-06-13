@@ -1,7 +1,7 @@
 import secrets
 import string
 import asyncpg
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 import uuid
 
