@@ -4,12 +4,61 @@ from datetime import datetime
 from typing import List
 
 from app.services.api_services.apikey_auth_services import get_current_client_from_api_key
+from app.services.auth_services import get_current_client
 from app.db.db import get_connection
 from app.schemas.user import EndUserCreate, EndUserResponse, EndUserSimpleResponse
 
 router = APIRouter()
 
-@router.post("/create", response_model=EndUserResponse)
+@router.get("/api/list_endusers", response_model=List[EndUserSimpleResponse])
+async def list_end_users(
+    client: dict = Depends(get_current_client),
+    db_pool: asyncpg.Pool = Depends(get_connection)
+):
+    """
+    List all end users for the authenticated client using API key.
+    
+    Args:
+        client (dict): Authenticated client information from API key
+        db_pool (asyncpg.Pool): Database connection pool
+        
+    Returns:
+        List[EndUserSimpleResponse]: List of end users for the client
+        
+    Raises:
+        HTTPException: If database error occurs
+    """
+    try:
+        client_id = client["id"]
+        
+        async with db_pool.acquire() as conn:
+            end_users = await conn.fetch(
+                """SELECT id, client_id, wallet_address, email
+                   FROM end_users 
+                   WHERE client_id = $1
+                   ORDER BY created_at DESC""",
+                client_id
+            )
+            
+            return [
+                EndUserSimpleResponse(
+                    id=user["id"],
+                    client_id=user["client_id"],
+                    wallet_address=user["wallet_address"],
+                    email=user["email"]
+                )
+                for user in end_users
+            ]
+            
+    except Exception as e:
+        print(f"Error listing end users: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error listing end users: {str(e)}"
+        )
+    
+    
+@router.post("/apikey/create_enduser", response_model=EndUserResponse)
 async def create_end_user(
     end_user: EndUserCreate,
     client: dict = Depends(get_current_client_from_api_key),
@@ -84,8 +133,8 @@ async def create_end_user(
             detail=f"Error creating end user: {str(e)}"
         )
 
-@router.get("/list", response_model=List[EndUserSimpleResponse])
-async def list_end_users(
+@router.get("/apikey/list_endusers", response_model=List[EndUserSimpleResponse])
+async def list_end_users_apikey(
     client: dict = Depends(get_current_client_from_api_key),
     db_pool: asyncpg.Pool = Depends(get_connection)
 ):
@@ -131,7 +180,7 @@ async def list_end_users(
             detail=f"Error listing end users: {str(e)}"
         )
 
-@router.get("/get/{wallet_address}", response_model=EndUserSimpleResponse)
+@router.get("/apikey/get_enduser/{wallet_address}", response_model=EndUserSimpleResponse)
 async def get_end_user(
     wallet_address: str,
     client: dict = Depends(get_current_client_from_api_key),
@@ -184,7 +233,7 @@ async def get_end_user(
             detail=f"Error getting end user: {str(e)}"
         )
 
-@router.delete("/delete/{wallet_address}")
+@router.delete("/delete_enduser/{wallet_address}")
 async def delete_end_user(
     wallet_address: str,
     client: dict = Depends(get_current_client_from_api_key),

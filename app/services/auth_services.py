@@ -13,7 +13,7 @@ import smtplib
 
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 10080 # 7 Days
 VERIFICATION_TOKEN_EXPIRE_MINUTES = 1
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
