@@ -9,7 +9,7 @@ from app.schemas.apikey import ApiKeyResponse, ApiKeyListResponse
 
 router = APIRouter()
 
-@router.post("/create", response_model=ApiKeyResponse)
+@router.post("/create_apikey", response_model=ApiKeyResponse)
 async def create_api_key(
     user: dict = Depends(get_current_client),
     db_pool: asyncpg.Pool = Depends(get_connection)
@@ -62,7 +62,7 @@ async def create_api_key(
             detail=f"Error creating API key: {str(e)}"
         )
 
-@router.get("/fetch", response_model=ApiKeyListResponse)
+@router.get("/fetch_apikeys", response_model=ApiKeyListResponse)
 async def fetch_api_keys(
     request: Request,
     user: dict = Depends(get_current_client),
@@ -100,7 +100,7 @@ async def fetch_api_keys(
             detail=f"Error fetching API keys: {str(e)}"
         )
 
-@router.delete("/delete")
+@router.delete("/delete_apikey")
 async def delete_api_key(
     request: Request,
     user: dict = Depends(get_current_client),
