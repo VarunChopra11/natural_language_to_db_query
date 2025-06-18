@@ -17,7 +17,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Default port
-EXPOSE 8000
+EXPOSE 8080
 
 # Run the application using uvicorn
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
