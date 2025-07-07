@@ -24,10 +24,6 @@ class FinancialProfileService:
                 nft_assets=nfts,
                 transactions=transactions
             )
-            print("----------------------------TRANSACTIONS----------------------------")
-            for transaction in profile.transactions:
-                print(transaction)
-            print("----------------------------TRANSACTIONS----------------------------")
             
             await self.store_profile(profile)
             
@@ -37,33 +33,45 @@ class FinancialProfileService:
     async def store_profile(self, profile: FinancialProfile):
         try:
             pool = await get_connection()
-            async with pool.acquire() as conn:  # ✅ Acquire connection from pool
+            async with pool.acquire() as conn:
                 async with conn.transaction():
-                # Store portfolio
+                    # Get end_user_id and client_id
+                    end_user = await conn.fetchrow(
+                        "SELECT id, client_id FROM end_users WHERE wallet_address = $1",
+                        profile.wallet_address
+                    )
+                    if not end_user:
+                        logger.error(f"No end_user found for wallet: {profile.wallet_address}")
+                        return
+                    
+                    end_user_id = end_user['id']
+                    client_id = end_user['client_id']
+                    
+                    # Store portfolio
                     await conn.execute(
                         """INSERT INTO financial_portfolios 
-                        (wallet_address, total_balance_usd, updated_at)
-                        VALUES ($1, $2, NOW())
-                        ON CONFLICT (wallet_address) DO UPDATE
+                        (end_user_id, client_id, total_balance_usd, updated_at)
+                        VALUES ($1, $2, $3, NOW())
+                        ON CONFLICT (end_user_id) DO UPDATE
                         SET total_balance_usd = EXCLUDED.total_balance_usd,
                             updated_at = NOW()""",
-                        profile.wallet_address, profile.portfolio.total_balance_usd
+                        end_user_id, client_id, profile.portfolio.total_balance_usd
                     )
                     
                     # Store token balances
                     for token in profile.portfolio.tokens:
                         await conn.execute(
                             """INSERT INTO token_balances 
-                            (wallet_address, symbol, token_address, balance, balance_usd, 
+                            (end_user_id, client_id, symbol, token_address, balance, balance_usd, 
                                 price, network, img_url, updated_at)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-                            ON CONFLICT (wallet_address, token_address) DO UPDATE
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                            ON CONFLICT (end_user_id, token_address) DO UPDATE
                             SET balance = EXCLUDED.balance, 
                                 balance_usd = EXCLUDED.balance_usd,
                                 price = EXCLUDED.price,
                                 img_url = EXCLUDED.img_url,
                                 updated_at = NOW()""",
-                            profile.wallet_address, token.symbol, token.token_address,
+                            end_user_id, client_id, token.symbol, token.token_address,
                             token.balance, token.balance_usd, token.price, 
                             token.network, token.img_url
                         )
@@ -72,13 +80,13 @@ class FinancialProfileService:
                     for meta in profile.app_balances.by_meta_type:
                         await conn.execute(
                             """INSERT INTO app_balances 
-                            (wallet_address, meta_type, position_count, balance_usd, updated_at)
-                            VALUES ($1, $2, $3, $4, NOW())
-                            ON CONFLICT (wallet_address, meta_type) DO UPDATE
+                            (end_user_id, client_id, meta_type, position_count, balance_usd, updated_at)
+                            VALUES ($1, $2, $3, $4, $5, NOW())
+                            ON CONFLICT (end_user_id, meta_type) DO UPDATE
                             SET position_count = EXCLUDED.position_count, 
                                 balance_usd = EXCLUDED.balance_usd,
                                 updated_at = NOW()""",
-                            profile.wallet_address, meta.meta_type, 
+                            end_user_id, client_id, meta.meta_type, 
                             meta.position_count, meta.balance_usd
                         )
                     
@@ -86,16 +94,16 @@ class FinancialProfileService:
                     for nft in profile.nft_assets:
                         await conn.execute(
                             """INSERT INTO nft_assets 
-                            (wallet_address, token_id, collection_address, name, 
+                            (end_user_id, client_id, token_id, collection_address, name, 
                                 estimated_value, img_url, network, last_updated)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-                            ON CONFLICT (wallet_address, token_id, collection_address) DO UPDATE
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+                            ON CONFLICT (end_user_id, token_id, collection_address) DO UPDATE
                             SET name = EXCLUDED.name, 
                                 estimated_value = EXCLUDED.estimated_value,
                                 img_url = EXCLUDED.img_url,
                                 network = EXCLUDED.network,
                                 last_updated = NOW()""",
-                            profile.wallet_address, nft.token_id, 
+                            end_user_id, client_id, nft.token_id, 
                             nft.collection_address, nft.name, nft.estimated_value,
                             nft.img_url, nft.network
                         )
@@ -104,10 +112,10 @@ class FinancialProfileService:
                     for tx in profile.transactions:
                         await conn.execute(
                             """INSERT INTO transaction_history 
-                            (wallet_address, tx_hash, block_number, timestamp, from_address, 
+                            (end_user_id, client_id, tx_hash, block_number, timestamp, from_address, 
                                 to_address, network, method_signature, method_sighash, 
                                 processed_description, description, value_usd, value_eth)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
                             ON CONFLICT (tx_hash) DO UPDATE
                             SET block_number = EXCLUDED.block_number,
                                 timestamp = EXCLUDED.timestamp,
@@ -119,7 +127,7 @@ class FinancialProfileService:
                                 description = EXCLUDED.description,
                                 value_usd = EXCLUDED.value_usd,
                                 value_eth = EXCLUDED.value_eth""",
-                            profile.wallet_address, tx.tx_hash, tx.block_number, tx.timestamp,
+                            end_user_id, client_id, tx.tx_hash, tx.block_number, tx.timestamp,
                             tx.from_address, tx.to_address, tx.network, tx.method_signature,
                             tx.method_sighash, tx.processed_description, tx.description,
                             tx.value_usd, tx.value_eth

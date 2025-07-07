@@ -62,9 +62,11 @@ async def create_tables():
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS financial_portfolios (
                     id SERIAL PRIMARY KEY,
-                    wallet_address TEXT NOT NULL UNIQUE,
+                    end_user_id INTEGER NOT NULL REFERENCES end_users(id) ON DELETE CASCADE,
+                    client_id INTEGER NOT NULL REFERENCES client_users(id) ON DELETE CASCADE,
                     total_balance_usd NUMERIC NOT NULL,
-                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (end_user_id)
                 )
             """)
             print("'financial_portfolios' table checked/created.")
@@ -72,7 +74,8 @@ async def create_tables():
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS token_balances (
                     id SERIAL PRIMARY KEY,
-                    wallet_address TEXT NOT NULL,
+                    end_user_id INTEGER NOT NULL REFERENCES end_users(id) ON DELETE CASCADE,
+                    client_id INTEGER NOT NULL REFERENCES client_users(id) ON DELETE CASCADE,
                     symbol TEXT NOT NULL,
                     token_address TEXT NOT NULL,
                     balance NUMERIC NOT NULL,
@@ -81,7 +84,7 @@ async def create_tables():
                     network TEXT NOT NULL,
                     img_url TEXT,
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    UNIQUE (wallet_address, token_address)
+                    UNIQUE (end_user_id, token_address)
                 )
             """)
             print("'token_balances' table checked/created.")
@@ -89,12 +92,13 @@ async def create_tables():
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS app_balances (
                     id SERIAL PRIMARY KEY,
-                    wallet_address TEXT NOT NULL,
+                    end_user_id INTEGER NOT NULL REFERENCES end_users(id) ON DELETE CASCADE,
+                    client_id INTEGER NOT NULL REFERENCES client_users(id) ON DELETE CASCADE,
                     meta_type TEXT NOT NULL,
                     position_count INTEGER NOT NULL,
                     balance_usd NUMERIC NOT NULL,
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    UNIQUE (wallet_address, meta_type)
+                    UNIQUE (end_user_id, meta_type)
                 )
             """)
             print("'app_balances' table checked/created.")
@@ -102,7 +106,8 @@ async def create_tables():
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS nft_assets (
                     id SERIAL PRIMARY KEY,
-                    wallet_address TEXT NOT NULL,
+                    end_user_id INTEGER NOT NULL REFERENCES end_users(id) ON DELETE CASCADE,
+                    client_id INTEGER NOT NULL REFERENCES client_users(id) ON DELETE CASCADE,
                     token_id TEXT NOT NULL,
                     collection_address TEXT NOT NULL,
                     name TEXT,
@@ -110,7 +115,7 @@ async def create_tables():
                     img_url TEXT,
                     network TEXT NOT NULL,
                     last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    UNIQUE (wallet_address, token_id, collection_address)
+                    UNIQUE (end_user_id, token_id, collection_address)
                 )
             """)
             print("'nft_assets' table checked/created.")
@@ -119,7 +124,8 @@ async def create_tables():
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS transaction_history (
                     id SERIAL PRIMARY KEY,
-                    wallet_address TEXT NOT NULL,
+                    end_user_id INTEGER NOT NULL REFERENCES end_users(id) ON DELETE CASCADE,
+                    client_id INTEGER NOT NULL REFERENCES client_users(id) ON DELETE CASCADE,
                     tx_hash TEXT NOT NULL UNIQUE,
                     block_number INTEGER NOT NULL,
                     timestamp TIMESTAMPTZ NOT NULL,
@@ -142,16 +148,16 @@ async def create_tables():
                 CREATE INDEX IF NOT EXISTS idx_end_users_wallet ON end_users(wallet_address);
             """)
             await conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_token_balances_wallet ON token_balances(wallet_address);
+                CREATE INDEX IF NOT EXISTS idx_token_balances_end_user ON token_balances(end_user_id);
             """)
             await conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_app_balances_wallet ON app_balances(wallet_address);
+                CREATE INDEX IF NOT EXISTS idx_app_balances_end_user ON app_balances(end_user_id);
             """)
             await conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_nft_assets_wallet ON nft_assets(wallet_address);
+                CREATE INDEX IF NOT EXISTS idx_nft_assets_end_user ON nft_assets(end_user_id);
             """)
             await conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_tx_history_wallet ON transaction_history(wallet_address);
+                CREATE INDEX IF NOT EXISTS idx_tx_history_end_user ON transaction_history(end_user_id);
             """)
             await conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_tx_history_timestamp ON transaction_history(timestamp DESC);
@@ -164,6 +170,23 @@ async def create_tables():
             """)
             await conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_nft_assets_collection ON nft_assets(collection_address);
+            """)
+            
+            # New indexes for client_id in all financial tables
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_financial_portfolios_client ON financial_portfolios(client_id);
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_token_balances_client ON token_balances(client_id);
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_app_balances_client ON app_balances(client_id);
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_nft_assets_client ON nft_assets(client_id);
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_tx_history_client ON transaction_history(client_id);
             """)
             print("All indexes created.")
 
