@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv(override=True)
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
@@ -11,3 +11,5 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 
 GMAIL_ADDRESS = os.getenv("GMAIL_ADDRESS")
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+
+ZAPPER_API_KEY = os.getenv("ZAPPER_API_KEY")
