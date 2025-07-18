@@ -8,3 +8,4 @@ asyncpg
 python-jose
 pydantic[email]
 SQLAlchemy
+anthropic
