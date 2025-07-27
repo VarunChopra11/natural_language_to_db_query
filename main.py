@@ -40,6 +40,14 @@ app.include_router(apikey_routers.router, prefix="/apikey", tags=["API Keys"])
 app.include_router(enduser_routers.router, prefix="/enduser", tags=["End Users"])
 app.include_router(analytics_routers.router, prefix="/analytics", tags=["Analytics"])
 
+@app.get("/wakeup")
+async def wakeup():
+    return {"status": "awake", "message": "This server is awake."}
+
+@app.head("/wakeup")
+async def wakeup_head():
+    return
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
