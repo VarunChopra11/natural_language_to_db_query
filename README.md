@@ -1,223 +1,237 @@
-# 🧠 Natural Language to DB Query
+# Crypto Monitoring & Analytics Platform
 
-A tool that converts natural language questions about Ethereum blockchain data into SQL queries, executes them against a PostgreSQL database, and provides the results via a RESTful API.
+A comprehensive financial monitoring platform that provides crypto portfolio analytics, transaction tracking, and natural language query capabilities for blockchain data. Built with FastAPI and powered by Claude AI for intelligent data querying.
 
----
+## 🚀 Features
 
-## 🚀 Overview
+### Core Functionality
+- **Portfolio Tracking**: Real-time crypto portfolio monitoring with USD valuations
+- **Transaction History**: Complete blockchain transaction analysis and categorization
+- **NFT Asset Management**: Track and value NFT collections across networks
+- **DeFi Position Monitoring**: Monitor lending, borrowing, and staking positions
+- **Natural Language Queries**: Ask questions about your data in plain English using Claude AI
 
-This project allows you to:
+### API Management
+- **Multi-tenant Architecture**: Support for multiple client organizations
+- **API Key Management**: Secure API key generation and management (up to 5 keys per client)
+- **End User Management**: Manage wallet addresses and associated data per client
+- **Analytics Dashboard**: Comprehensive analytics for client portfolios
 
-- Convert natural language questions to optimized PostgreSQL queries using **Google's Gemini AI**
-- Query a database containing **Ethereum blockchain data** (blocks, transactions, withdrawals, etc.)
-- Get results via a **RESTful API**
-- Import and process blockchain data from **JSON files**
+### Security & Authentication
+- **Email Verification**: Secure signup with email verification
+- **JWT Authentication**: Secure session management
+- **API Key Authentication**: Programmatic access with Bearer token support
+- **Multi-level Authorization**: Client and end-user level access controls
 
----
+## 🛠️ Tech Stack
 
-## ⚙️ Project Setup
+- **Backend**: FastAPI (Python)
+- **Database**: PostgreSQL with AsyncPG
+- **AI/ML**: Anthropic Claude (via Vertex AI)
+- **Blockchain Data**: Zapper API integration
+- **Authentication**: JWT with email verification
+- **Email**: SMTP with Gmail integration
+- **Deployment**: Cloud-ready with GCP support
 
-### ✅ Prerequisites
+## 📋 Prerequisites
 
 - Python 3.8+
-- PostgreSQL or CockroachDB (PostgreSQL compatible)
-- Google Gemini API Key
+- PostgreSQL database
+- GCP Account (for Claude AI integration)
+- Gmail account (for email verification)
+- Zapper API key
 
-### 📦 Installation
+## 🔧 Installation
 
-Clone this repository:
-
+1. **Clone the repository**
 ```bash
 git clone <repository-url>
-cd natural_language_to_db_query
+cd crypto-monitoring-platform
 ```
 
-Create and activate a virtual environment:
-
-```bash
-python -m venv venv
-
-# On Windows
-venv\Scripts\activate
-
-# On macOS/Linux
-source venv/bin/activate
-```
-
-Install the required dependencies:
-
+2. **Install dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-Set up environment variables:
-
+3. **Set up environment variables**
 ```bash
-# Copy the sample environment file
 cp .env.sample .env
-
-# Edit .env with your DB credentials and Gemini API key
 ```
 
-Set up the database:
-
-```bash
-# Connect to your PostgreSQL server and run the schema
-psql -U yourusername -d yourdbname -f schema.sql
-```
-
----
-
-## 📁 File Structure
-
-### 🔹 Core Files
-
-- `main.py` – FastAPI application entry point  
-- `schema.sql` – SQL schema for creating blockchain tables and indexes  
-- `insert_data.py` – Script to load Ethereum data from JSON to DB  
-- `sample_data.json` – Sample Ethereum blockchain data  
-
-### 🔹 App Directory
-
-- `config.py` – Loads settings from environment variables  
-- `llm.py` – Handles natural language processing with Gemini  
-- `query.py` – Manages DB connection and query execution  
-- `query_routers.py` – API endpoints for query execution  
-
-### 🔹 Configuration
-
-- `.env.sample` – Template for environment variables  
-- `.gitignore` – Specifies ignored files  
-
----
-
-## ▶️ Usage
-
-Run the application:
-
-```bash
-uvicorn main:app --reload
-```
-
-This will start the FastAPI server at [http://localhost:8000](http://localhost:8000), which provides the following endpoints:
-
-- `/query/create_query?natural_language=your_query&page_index=1&rows_per_page=100`  
-  Convert natural language to SQL, execute it, and return results
-
-You can also use the automatic API documentation:
-
-- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)  
-- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-
----
-
-## 📥 Importing Data
-
-To load Ethereum blockchain data into your database:
-
-1. Ensure your JSON file matches the format in `sample_data.json`  
-2. Update the `JSON_FILE_PATH` in your `.env` file  
-3. Run the import script:
-
-```bash
-python insert_data.py
-```
-
----
-
-## 🗃️ Database Schema
-
-### `blocks`
-
-- **Primary Key**: `number`  
-- **Fields**: `hash`, `parent_hash`, `timestamp`, `gas_limit`, `gas_used`, etc.
-
-### `transactions`
-
-- **Primary Key**: `hash`  
-- **Foreign Key**: `block_number → blocks(number)`  
-- **Fields**: `from_address`, `to_address`, `value`, `gas_price`, etc.
-
-### `withdrawals`
-
-- **Primary Keys**: `block_number`, `index`  
-- **Fields**: `validator_index`, `address`, `amount`
-
-### `access_list`
-
-- **Primary Keys**: `transaction_hash`, `address`  
-- **Fields**: `storage_keys`
-
----
-
-## 🔐 Environment Variables
-
-Your `.env` file should include:
+Fill in your `.env` file with the required credentials:
 
 ```env
-JSON_FILE_PATH="/path/to/your/blockchain/data.json"
+# Authentication
+JWT_SECRET_KEY=your_jwt_secret_key
+GMAIL_ADDRESS=your_gmail@gmail.com
+GMAIL_APP_PASSWORD=your_gmail_app_password
+FRONTEND_URL=https://your-frontend-domain.com
 
-POSTGRESDB_HOST="your-database-host"
-POSTGRESDB_PORT=your-database-port
-POSTGRESDB_USER="your-username"
-POSTGRESDB_PASSWORD="your-password"
-POSTGRESDB_NAME="your-database-name"
+# Database
+GCP_DATABASE_URL=postgresql+asyncpg://user:password@host/database
 
-GEMINI_API_KEY="your-gemini-api-key"
+# Claude AI (GCP Vertex AI)
+GCP_PROJECT_ID=your-gcp-project-id
+GCP_LOCATION=us-east5
+CLAUDE_MODEL_NAME=claude-3-5-haiku@20241022
+SA_INFO=base64_encoded_service_account_json
+
+# Analytics
+ZAPPER_API_KEY=your_zapper_api_key
 ```
 
----
-
-## 🔌 API Endpoints
-
-### Query Creation Endpoint
-
-**GET** `/query/create_query`
-
-**Parameters:**
-
-- `natural_language` (string, required): The natural language query to convert to SQL  
-- `page_index` (integer, optional, default=1): Page number for pagination  
-- `rows_per_page` (integer, optional, default=100): Number of rows per page
-
-**Response:**
-
-```json
-{
-  "query": "Generated SQL query",
-  "count_query": "SQL query to count total rows",
-  "explanation": "Explanation of the query",
-  "columns": ["column1", "column2", ...],
-  "data": [
-    {"column1": "value1", "column2": "value2", ...},
-    ...
-  ],
-  "total_rows": 1000,
-  "has_next_page": true
-}
+4. **Run the application**
+```bash
+python main.py
 ```
 
+The API will be available at `http://localhost:8000`
+
+## 🏗️ Database Schema
+
+The platform uses a multi-tenant PostgreSQL schema with the following key tables:
+
+- **client_users**: Organization accounts and verification status
+- **api_keys**: API key management and authentication
+- **end_users**: Wallet addresses managed by each client
+- **financial_portfolios**: Portfolio summaries and total balances
+- **token_balances**: Individual token holdings and valuations
+- **app_balances**: DeFi positions (lending, borrowing, staking)
+- **nft_assets**: NFT collections and estimated values
+- **transaction_history**: Complete transaction records with AI-powered descriptions
+
+## 🔑 API Endpoints
+
+### Authentication
+- `POST /auth/signup` - Register new client organization
+- `POST /auth/login` - Request login verification email
+- `GET /auth/verify-email` - Verify email and complete authentication
+- `GET /auth/get-current-client` - Get current authenticated client
+- `POST /auth/logout` - Logout and clear session
+
+### API Key Management
+- `POST /apikey/create_apikey` - Generate new API key
+- `GET /apikey/fetch_apikeys` - List all API keys (masked)
+- `DELETE /apikey/delete_apikey` - Delete specific API key
+
+### End User Management
+- `POST /enduser/apikey/create_enduser` - Add new wallet address
+- `GET /enduser/apikey/list_endusers` - List managed wallets
+- `GET /enduser/apikey/get_enduser/{wallet_address}` - Get specific wallet
+- `DELETE /enduser/apikey/delete_enduser/{wallet_address}` - Remove wallet
+
+### Analytics
+- `GET /analytics/portfolio-summary` - Portfolio overview across all users
+- `GET /analytics/token-distribution` - Token holdings breakdown
+- `GET /analytics/app-summary` - DeFi positions summary
+- `GET /analytics/nft-summary` - NFT collections overview
+- `GET /analytics/transaction-activity` - Transaction volume metrics
+
+### Natural Language Queries
+- `GET /query/create_query` - Convert natural language to SQL and execute
+
+## 🤖 AI-Powered Querying
+
+The platform integrates Claude AI to convert natural language questions into SQL queries:
+
+```bash
+# Example queries you can ask:
+"Show me all transactions over $1000 in the last week"
+"Which tokens have the highest balance across all users?"
+"How many NFTs does each user own?"
+"What's the total portfolio value by network?"
+```
+
+## 🔐 Authentication Methods
+
+### 1. Cookie-based (Web Interface)
+```javascript
+// Automatic cookie handling for web applications
+fetch('/analytics/portfolio-summary', {
+  credentials: 'include'
+})
+```
+
+### 2. API Key (Programmatic Access)
+```bash
+# Using Authorization header
+curl -H "Authorization: Bearer hq_your_api_key_here" \
+     https://api.example.com/enduser/apikey/list_endusers
+
+# Using X-API-Key header
+curl -H "X-API-Key: hq_your_api_key_here" \
+     https://api.example.com/enduser/apikey/list_endusers
+```
+
+## 📊 Data Sources
+
+- **Zapper API**: Portfolio data, token balances, DeFi positions, NFTs, and transaction history
+- **Real-time Pricing**: Token prices and USD valuations
+- **Multi-chain Support**: Ethereum, Base, and other EVM networks
+
+## 🚀 Deployment
+
+The application is designed for cloud deployment with:
+
+- **Database**: PostgreSQL (supports GCP Cloud SQL)
+- **AI Service**: GCP Vertex AI for Claude integration
+- **Email**: Gmail SMTP for verification emails
+- **CORS**: Configured for web application integration
+
+## 🔧 Development
+
+### Project Structure
+```
+app/
+├── routers/          # API route handlers
+├── services/         # Business logic and external integrations
+├── schemas/          # Pydantic models for request/response
+├── db/              # Database connection and table creation
+└── config.py        # Configuration management
+```
+
+### Key Services
+- **ZapperService**: Blockchain data integration
+- **FinancialProfileService**: Portfolio data processing
+- **ApiKeyService**: Secure API key management
+- **GenerateQuery**: AI-powered SQL generation
+
+
+## 🤝 Contributing
+
+1. **Request access** to the repository if you’re not already a collaborator.
+2. Fork the repository **(if permitted)** or create a feature branch directly:  
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. Commit your changes:  
+   ```bash
+   git commit -m 'Add amazing feature'
+   ```
+4. Push to the branch:  
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+5. Open a Pull Request for review.
+
+> ✅ **Note:** Please follow the contribution guidelines and respect any code review or security policies defined for this private project.
+
 ---
 
-## 💬 Example Queries
+## 📝 License
 
-Here are some example queries you can make to the API:
-
-- `/query/create_query?natural_language=Show the last 5 transactions with value over 1 ETH`  
-- `/query/create_query?natural_language=What was the average gas price in the last 100 blocks?`  
-- `/query/create_query?natural_language=Find the top 10 miners by number of blocks mined`  
-- `/query/create_query?natural_language=Show all withdrawals to address 0xb9d7934878b5fb9610b3fe8a5e441e8fad7e293f`
+This project is licensed under the **MIT License** — see the `LICENSE` file for details.
 
 ---
 
-## 📄 License
+## 🆘 Support
 
-MIT License. See `LICENSE` file for more details.
+For support and questions:
+
+- Open an **Issue** in this private repository.
+- Contact a repository **maintainer** directly if the issue contains sensitive information.
+- Check the API documentation at `/docs` (FastAPI auto-generated).
+- Review the database schema in `app/db/db.py`.
 
 ---
-
-## 🙌 Acknowledgements
-
-- **Google Gemini** for powerful LLM integration  
-- **FastAPI** for high-performance API development  
-- **Ethereum** for open blockchain data
