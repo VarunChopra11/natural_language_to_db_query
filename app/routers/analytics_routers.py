@@ -40,7 +40,7 @@ async def transaction_activity(
 
 @router.get("/analytics/last-analytics")
 async def last_analytics():
-    url = "https://twitter-scrapper-pgdo.onrender.com/last-analytics"
+    url = "https://scrapper.helqor.tech/last-analytics"
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
     response.raise_for_status()  # Raise an error if the request failed
